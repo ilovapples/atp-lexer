@@ -1,0 +1,61 @@
+/* the parameter n1 points to an s32 v1, where v1 is not copied by value but is instead 
+ * an alias for @n1 (the value at the memory address stored in n1, like *n1 in C) */
+/* if the identifier after the @ symbol is omitted, v1 is still not copied by value. It is passed by pointer,
+ * just without an identifier for the pointer (like int& v1 in C++) */
+/* assigning looks a lot like in C, 
+ * but initialization uses := like Go and some other languages (only necessary for type inference),
+ * return types are specified by -> return_type after the closing parenthesis of the parameter list,
+ * and return values explicitly use return return_val; */
+/* I don't know whether C strings or a string type would be suitable, so for now,
+ * I'll use C strings */
+
+/* a normal declaration of an integral variable v1 combined with a pointer p1 to it might look like:
+s32 v1@p1 = 3;
+v1 is equal to 3, p1 points to v1, so @p1 = 3;
+This would allocate 32 bits (4-byte s32) + 64 bits (8-byte s32 @) = 96 bits (12 bytes)
+maybe:
+movq	$fs:40, %rax
+movq	%rax, -8(%rbp)
+
+movl $3, -20(%rbp)
+leaq -20(%rbp), %rax
+movq %rax, -16(%rbp)
+
+With a 20-byte stack frame (12 bytes + 8 for canary value) (assuming no other variables or function arguments)
+*/
+
+func swap(s32 v1@, s32 v2@)
+{
+	s32 tmp = v1;
+	v1 = v2;
+	v2 = tmp;
+}
+
+/* this function just as well be written: 
+func swap(s32 @p1, s32 @p2)
+{
+	s32 tmp = @p1;
+	@p1 = @p2;
+	@p2 = tmp;
+}
+*/
+
+/* 'obtain' is a keyword like 'extern' in C. Not sure if I'll make it necessary to use C funcs. */
+/* maybe 'obtain' permits static linking with the function? */
+/* a@ is like &a in C */
+/* @ is an unary postfix operator that returns the memory address of its operand */
+/* @ is also an unary prefix operator that returns the value at the memory address stored in its operand */
+/* a type like s32 @ is the same as a type like int32_t * in C */
+
+obtain "C" func printf(char @fmt, ...) -> u64;
+
+func main() -> s32
+{
+	s32 a = 0d5;
+	s32 b = 0x029;
+	printf("a = %d, b = %d", a, b);
+	swap(a, b);
+	printf("a = %d, b = %d", a, b);
+
+	return 0;
+}
